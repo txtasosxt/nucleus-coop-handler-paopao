@@ -1,7 +1,9 @@
 # First trial checklist
 
-All runtime results below are pending. A JavaScript syntax check or a successful
-handler load is not proof of multiplayer compatibility.
+The first revision loaded in Nucleus but the game processes crashed inside the
+bundled Epic emulator DLL before opening a window. The current revision disables
+that emulator and refreshes the full copies. Its launch result remains pending.
+A successful launch would not establish multiplayer compatibility.
 
 ## Preparation
 
@@ -16,8 +18,11 @@ handler load is not proof of multiplayer compatibility.
 
 1. **Handler load:** the experimental demo appears after using Search Game.
    Record the installed Nucleus version and any handler parsing error.
-2. **Launch:** confirm two independent `PaoPao Demo.exe` processes reach the
-   menu, each in its assigned region. If one exits, capture its player log.
+2. **Launch (current focus):** let Nucleus refresh both copies. Confirm the
+   copied EOS DLL matches Steam's original DLL, then check whether two
+   `PaoPao Demo.exe` processes reach the menu in their assigned regions. If one
+   exits, capture its player log and Windows Application Error event. Record
+   an EOS login error separately from a process crash.
 3. **Controls:** move controller 1, then controller 2. Each must control only
    its own window, including when that window is in the background. Record any
    menu that still needs keyboard/mouse input.
