@@ -1,0 +1,16 @@
+# Local test data and proprietary/runtime files must stay out of the repository.
+content/
+utils/
+nepice_settings/
+steam_settings/
+*.log
+*.dll
+*.exe
+*.dat
+*.acf
+*.reg
+user_steam_id.txt
+account_name.txt
+NemirtingasEpicEmu.json
+.DS_Store
+Thumbs.db
