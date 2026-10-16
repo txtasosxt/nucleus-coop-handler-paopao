@@ -19,9 +19,9 @@ Game.SymlinkGame = false;
 Game.SymlinkFolders = false;
 Game.SymlinkExe = false;
 Game.KeepSymLinkOnExit = true;
-// Refresh retained copies too: disabling Epic emulation alone leaves its DLLs
-// behind from the previous run. This recopies the game before applying setup.
-Game.ForceSymlink = true;
+// A forced full-copy pass did not overwrite cached emulator DLLs in testing.
+// Restore the original EOS libraries explicitly in Game.Play instead.
+Game.ForceSymlink = false;
 
 // Keep Steam emulation for this one-variable startup diagnostic.
 // Real EOS authentication may reject the emulated Steam ticket; joining is
@@ -91,8 +91,47 @@ Game.LockInputSuspendsExplorer = false;
 Game.LockInputToggleKey = 0x23;
 
 Game.Play = function () {
-    var logPath = Context.GetFolder(Nucleus.Folder.InstancedGameFolder) +
-        "\\pao-player-" + (Context.PlayerID + 1) + ".log";
+    var IO = importNamespace("System.IO");
+    var sourceRoot = String(IO.Path.GetFullPath(Context.RootInstallFolder));
+    var instanceRoot = String(IO.Path.GetFullPath(
+        Context.GetFolder(Nucleus.Folder.InstancedGameFolder)));
+    var sourcePrefix = sourceRoot.toLowerCase().replace(/[\\\/]+$/, "") + "\\";
+    if (instanceRoot.toLowerCase() === sourceRoot.toLowerCase() ||
+        instanceRoot.toLowerCase().indexOf(sourcePrefix) === 0) {
+        throw new Error("EOS restoration requires a separate Nucleus game copy.");
+    }
+
+    var dataFolders = ["PaoPao Demo_Data", "PaoPao Playtest 2_Data"];
+    for (var i = 0; i < dataFolders.length; i++) {
+        var relativeDll = dataFolders[i] +
+            "\\Plugins\\x86_64\\EOSSDK-Win64-Shipping.dll";
+        var sourceDll = IO.Path.Combine(sourceRoot, relativeDll);
+        if (!IO.File.Exists(sourceDll)) {
+            if (i === 0) {
+                throw new Error("The original Steam demo EOS library is missing.");
+            }
+            continue; // Older Playtest data is not present in every install.
+        }
+
+        var dataPath = IO.Path.Combine(instanceRoot, dataFolders[i]);
+        var pluginsPath = IO.Path.Combine(dataPath, "Plugins");
+        var dllFolder = IO.Path.Combine(pluginsPath, "x86_64");
+        var destinationDll = IO.Path.Combine(instanceRoot, relativeDll);
+        var directories = [instanceRoot, dataPath, pluginsPath, dllFolder];
+        for (var j = 0; j < directories.length; j++) {
+            if (!IO.Directory.Exists(directories[j]) ||
+                (Number(IO.File.GetAttributes(directories[j])) & 0x400) !== 0) {
+                throw new Error("EOS restoration requires ordinary full-copy directories.");
+            }
+        }
+        if (IO.File.Exists(destinationDll) &&
+            (Number(IO.File.GetAttributes(destinationDll)) & 0x400) !== 0) {
+            throw new Error("Refusing to replace a linked EOS library.");
+        }
+        IO.File.Copy(sourceDll, destinationDll, true);
+    }
+
+    var logPath = instanceRoot + "\\pao-player-" + (Context.PlayerID + 1) + ".log";
     Context.StartArguments = "-screen-fullscreen 0 -popupwindow" +
         " -screen-width " + Context.Width +
         " -screen-height " + Context.Height +

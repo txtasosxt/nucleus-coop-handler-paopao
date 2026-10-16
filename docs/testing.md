@@ -1,8 +1,9 @@
 # First trial checklist
 
 The first revision loaded in Nucleus but the game processes crashed inside the
-bundled Epic emulator DLL before opening a window. The current revision disables
-that emulator and refreshes the full copies. Its launch result remains pending.
+bundled Epic emulator DLL before opening a window. A forced copy pass failed to
+replace that cached DLL. The current revision disables Epic emulation and
+explicitly restores the original EOS DLLs. Its launch result remains pending.
 A successful launch would not establish multiplayer compatibility.
 
 ## Preparation
@@ -18,7 +19,7 @@ A successful launch would not establish multiplayer compatibility.
 
 1. **Handler load:** the experimental demo appears after using Search Game.
    Record the installed Nucleus version and any handler parsing error.
-2. **Launch (current focus):** let Nucleus refresh both copies. Confirm the
+2. **Launch (current focus):** let the handler restore the EOS DLLs. Confirm the
    copied EOS DLL matches Steam's original DLL, then check whether two
    `PaoPao Demo.exe` processes reach the menu in their assigned regions. If one
    exits, capture its player log and Windows Application Error event. Record
