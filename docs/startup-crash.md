@@ -1,5 +1,9 @@
 # Startup crash observed on 2026-10-15
 
+**Historical investigation:** this describes an earlier restoration handler,
+now archived under `experiments/`, not the current working Steam + Sandboxie
+workflow. Follow the [current setup guide](automated-launch.md) for installation.
+
 The initial handler was loaded successfully in Nucleus. It produced separate
 instance folders, configured the bundled emulators, and created game processes.
 Each process exited before showing a game window. The player logs contained

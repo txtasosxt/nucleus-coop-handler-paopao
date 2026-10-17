@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory=$true)]
     [string]$NucleusDirectory,
-    [string]$HandlerPath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\handlers\Pao Pao Demo.js'))
+    [string]$HandlerPath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\experiments\native-steam-authentication.js'))
 )
 $ErrorActionPreference = 'Stop'
 $paoAssembly = [Reflection.Assembly]::LoadFrom((Join-Path $NucleusDirectory 'Nucleus.Gaming.dll'))
@@ -12,7 +12,9 @@ $paoHandlerText = [IO.File]::ReadAllText($HandlerPath)
 $paoFixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('pao-restoration-check-' + [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-fff'))
 $paoRelativeDlls = @(
     'PaoPao Demo_Data\Plugins\x86_64\EOSSDK-Win64-Shipping.dll',
-    'PaoPao Playtest 2_Data\Plugins\x86_64\EOSSDK-Win64-Shipping.dll'
+    'PaoPao Playtest 2_Data\Plugins\x86_64\EOSSDK-Win64-Shipping.dll',
+    'PaoPao Demo_Data\Plugins\x86_64\steam_api64.dll',
+    'PaoPao Playtest 2_Data\Plugins\x86_64\steam_api64.dll'
 )
 
 function New-PaoCheckEngine([string]$SourceRoot, [string]$InstanceRoot) {
@@ -39,7 +41,7 @@ function New-PaoCheckEngine([string]$SourceRoot, [string]$InstanceRoot) {
 function New-PaoFixture([string]$CaseName, [bool]$IncludePlaytest) {
     $paoSource = Join-Path (Join-Path $paoFixtureRoot $CaseName) 'source'
     $paoInstance = Join-Path (Join-Path $paoFixtureRoot $CaseName) 'Instance0'
-    $paoIndices = if ($IncludePlaytest) { @(0, 1) } else { @(0) }
+    $paoIndices = if ($IncludePlaytest) { @(0, 1, 2, 3) } else { @(0, 2) }
     foreach ($paoIndex in $paoIndices) {
         $paoSourceDll = Join-Path $paoSource $paoRelativeDlls[$paoIndex]
         $paoDestinationDll = Join-Path $paoInstance $paoRelativeDlls[$paoIndex]
@@ -68,7 +70,7 @@ foreach ($paoCase in @(
         $paoSourceHash = (Get-FileHash -LiteralPath (Join-Path $paoFixture.Source $paoRelativeDlls[$paoIndex])).Hash
         $paoDestinationHash = (Get-FileHash -LiteralPath (Join-Path $paoFixture.Instance $paoRelativeDlls[$paoIndex])).Hash
         if ($paoSourceHash -ne $paoOriginalHashes[$paoIndex] -or $paoDestinationHash -ne $paoSourceHash) {
-            throw "EOS restoration regression: $($paoCase.Name)"
+            throw "Library restoration regression: $($paoCase.Name)"
         }
     }
     $paoResults += [pscustomobject]@{Case=$paoCase.Name;Result='passed'}

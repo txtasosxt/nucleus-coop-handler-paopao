@@ -1,51 +1,85 @@
-// Experimental PAO PAO Steam demo handler. Multiplayer is not verified.
-// Start with two players; see README.md and docs/testing.md before running.
+// PAO PAO Demo: automated real-Steam launch and per-context Proto Input workers.
+// The x64 helper replaces manual game launch and standalone Proto Input Hosts.
+var PaoPaoControllerIndices = [2, 1]; // Example normal/boxed OpenXinput indices: calibrate on your PC.
+var PaoPaoSwapScreenAssignments = true; // true: boxed account in the first Nucleus region, normal account in the second.
+var PaoPaoSandboxStart = "C:\\Program Files\\Sandboxie-Plus\\Start.exe"; // Set to your Sandboxie installation.
+var PaoPaoSandboxName = "SteamPlayer2";
 
 Game.ExecutableName = "PaoPao Demo.exe";
 Game.ExecutableContext = ["PaoPao Demo_Data", "GameAssembly.dll", "UnityPlayer.dll"];
 Game.GUID = "PaoPaoDemoExperimental";
-Game.GameName = "PAO PAO Demo (Experimental)";
+Game.GameName = "PAO PAO Demo (Automated Steam + Sandboxie)";
 Game.SteamID = "3498580";
 Game.MaxPlayers = 2;
 Game.MaxPlayersOneMonitor = 2;
 Game.BinariesFolder = "";
 Game.WorkingFolder = "";
-Game.Description = "STARTUP TEST: the bundled Epic emulator crashes with this demo, so this revision keeps the game's original Epic DLL. Steam emulation and controller hooks remain experimental. Assign two Xbox controllers to two screen sections. Multiplayer, save isolation and independent controls are unverified; see the repository testing guide.";
+Game.Description = "Requires the companion launcher, the supported demo's XInput settings patch, and two separately signed-in Steam accounts (normal Windows and the SteamPlayer2 Sandboxie box). See the repository setup guide. Configure your Sandboxie path, controller indices and screen order at the top of this handler. Close the games and standalone Proto Hosts before Play. Launch, controller isolation, background input, multiplayer and Nucleus placement have worked in testing, including with Nucleus unelevated. The boxed helper still requests elevation. Audio separation remains unverified. This targets the demo, not the full game.";
 
-// Full copies keep emulator DLL replacements away from the Steam installation.
-// Two instances need approximately 18 GiB plus overhead on the Nucleus drive.
-Game.HardcopyGame = true;
+// Do not create copies or change the working Steam/Sandboxie environments.
+Game.HardcopyGame = false;
+Game.HardlinkGame = false;
 Game.SymlinkGame = false;
 Game.SymlinkFolders = false;
 Game.SymlinkExe = false;
-Game.KeepSymLinkOnExit = true;
-// A forced full-copy pass did not overwrite cached emulator DLLs in testing.
-// Restore the original EOS libraries explicitly in Game.Play instead.
 Game.ForceSymlink = false;
-
-// Keep Steam emulation for this one-variable startup diagnostic.
-// Real EOS authentication may reject the emulated Steam ticket; joining is
-// not the success criterion yet. The old EOS emulator caused 0xc0000409.
-Game.UseGoldberg = true;
-Game.GoldbergWriteSteamIDAndAccount = true;
+Game.KeepSymLinkOnExit = true;
+Game.UseNucleusEnvironment = false;
+Game.ForceEnvironmentUse = false;
+Game.UseGoldberg = false;
+Game.GoldbergWriteSteamIDAndAccount = false;
+Game.NeedsSteamEmulation = false;
 Game.UseNemirtingasEpicEmu = false;
+Game.CreateSteamAppIdByExe = false;
 
-// Request fresh LocalLow profiles; actual Unity save routing needs testing.
-// Deliberately omit DocumentsConfigPath and DocumentsSavePath.
-Game.UseNucleusEnvironment = true;
-Game.UserProfileSavePath = "AppData\\LocalLow\\ArtDock\\PaoPao Demo";
-Game.UserProfileSavePathNoCopy = true;
-
+// Start Nucleus BEFORE the games: normal session-start cleanup closes matching
+// game processes even when ThirdPartyLaunch is enabled.
+Game.ThirdPartyLaunch = true;
+Game.IgnoreThirdPartyPrompt = true;
+Game.ForceProcessPick = false;
+Game.ProcessChangesAtEnd = false;
+Game.PromptBetweenInstances = false;
+Game.PauseBetweenStarts = 0;
+Game.PauseBetweenProcessGrab = 0;
+Game.RequiresAdmin = false; // Allow testing Nucleus as a standard user.
 Game.HandlerInterval = 100;
-Game.PauseBetweenStarts = 20;
 Game.SupportsPositioning = true;
 Game.HasDynamicWindowTitle = true;
 Game.Hook.ForceFocusWindowName = "PaoPao Demo";
 Game.Hook.ForceFocus = false;
 Game.SupportsKeyboard = false;
 Game.SupportsMultipleKeyboardsAndMice = false;
+Game.KeepAspectRatio = false;
+Game.KeepMonitorAspectRatio = false;
+Game.NotTopMost = true;
+Game.DontResize = false;
+Game.DontReposition = false;
+Game.DontRemoveBorders = false;
 
-// Proto Input owns controller routing; disable the legacy input hooks.
+// Separate context-aware helper workers own injection; Nucleus must not reinject.
+Game.ProtoInput.InjectStartup = false;
+Game.ProtoInput.InjectRuntime_RemoteLoadMethod = false;
+Game.ProtoInput.InjectRuntime_EasyHookMethod = false;
+Game.ProtoInput.InjectRuntime_EasyHookStealthMethod = false;
+Game.ProtoInput.UseOpenXinput = true;
+Game.ProtoInput.UseDinputRedirection = false;
+// Nucleus also uses this flag to show XInput gamepads in its setup screen.
+// It cannot inject the hook here because every injection method above is off.
+Game.ProtoInput.XinputHook = true;
+Game.ProtoInput.FocusHooks = false;
+Game.ProtoInput.RegisterRawInputHook = false;
+Game.ProtoInput.GetRawInputDataHook = false;
+Game.ProtoInput.ClipCursorHook = false;
+Game.ProtoInput.BlockRawInputHook = false;
+Game.ProtoInput.MessageFilterHook = false;
+Game.ProtoInput.RawInputFilter = false;
+Game.ProtoInput.EnableFocusMessageLoop = false;
+Game.ProtoInput.FreezeExternalInputWhenInputNotLocked = false;
+Game.ProtoInput.BlockedMessages = [];
+Game.LockInputAtStart = false;
+Game.LockInputSuspendsExplorer = false;
+
+// Disable legacy hooks, input simulation and file-based controller wrappers.
 Game.Hook.CustomDllEnabled = false;
 Game.Hook.XInputEnabled = false;
 Game.Hook.XInputReroute = false;
@@ -70,70 +104,100 @@ Game.HookReRegisterRawInput = false;
 Game.HookReRegisterRawInputMouse = false;
 Game.HookReRegisterRawInputKeyboard = false;
 Game.DrawFakeMouseCursor = false;
+Game.HookFocus = false;
+Game.FakeFocus = false;
+Game.PreventWindowDeactivation = false;
+Game.SetWindowHook = false;
+Game.SetWindowHookStart = false;
+Game.HookInit = false;
+Game.BlockRawInput = false;
+Game.UseX360ce = false;
+Game.UseDevReorder = false;
+Game.UseDInputBlocker = false;
 
-Game.ProtoInput.InjectStartup = true;
-Game.ProtoInput.InjectRuntime_RemoteLoadMethod = false;
-Game.ProtoInput.InjectRuntime_EasyHookMethod = false;
-Game.ProtoInput.InjectRuntime_EasyHookStealthMethod = false;
-Game.ProtoInput.XinputHook = true;
-Game.ProtoInput.UseOpenXinput = false;
-Game.ProtoInput.UseDinputRedirection = false;
-Game.ProtoInput.FocusHooks = true;
-Game.ProtoInput.FreezeExternalInputWhenInputNotLocked = false;
-// Unity may enumerate the same controllers through raw HID as well as XInput.
-// This trial blocks that path. Keyboard/mouse menus may need a later refinement.
-Game.ProtoInput.BlockRawInputHook = true;
-Game.ProtoInput.RawInputFilter = false;
-Game.ProtoInput.MessageFilterHook = true;
-Game.ProtoInput.BlockedMessages = [0x00FF];
-Game.LockInputAtStart = false;
-Game.LockInputSuspendsExplorer = false;
-Game.LockInputToggleKey = 0x23;
+function PaoPaoGetNucleusRoot() {
+    var System = importNamespace("System");
+    return String(System.AppDomain.CurrentDomain.BaseDirectory);
+}
+
+function PaoPaoSystemAssembly() {
+    // Nucleus's Jint AllowClr list does not expose System.dll constructors through
+    // importNamespace. Resolve the framework assembly explicitly instead.
+    var System = importNamespace("System");
+    return System.Reflection.Assembly.Load("System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
+}
+
+function PaoPaoBuildLaunchInfo(slot, controller, width, height) {
+    var IO = importNamespace("System.IO");
+    var System = importNamespace("System");
+    var nucleusRoot = PaoPaoGetNucleusRoot();
+    var helper = String(IO.Path.Combine(nucleusRoot, "PaoPaoNucleusLauncher.exe"));
+    if (!IO.File.Exists(helper)) {
+        throw new Error("Install PaoPaoNucleusLauncher.exe in the Nucleus root first.");
+    }
+    function quoted(value) {
+        if (/[\"\r\n]/.test(value)) {
+            throw new Error("Unsupported character in launcher path or sandbox name.");
+        }
+        return '"' + value + '"';
+    }
+    var framework = PaoPaoSystemAssembly();
+    var info = System.Activator.CreateInstance(framework.GetType("System.Diagnostics.ProcessStartInfo"));
+    var args = "launch " + slot + " " + controller + " " + width + " " + height;
+    if (slot === 2 && !/^[A-Za-z0-9_]+$/.test(PaoPaoSandboxName)) {
+        throw new Error("Use an unquoted Sandboxie box name containing letters, numbers or underscores.");
+    }
+    info.FileName = slot === 1 ? helper : PaoPaoSandboxStart;
+    // Sandboxie's /box: parser accepts a bare name, not a quoted value.
+    // Only the executable path needs quoting for its spaces.
+    info.Arguments = slot === 1 ? args
+        : "/box:" + PaoPaoSandboxName + " /elevate /wait " + quoted(helper) + " " + args;
+    if (slot === 2 && !IO.File.Exists(PaoPaoSandboxStart)) {
+        throw new Error("Sandboxie Start.exe is missing at the configured path.");
+    }
+    info.WorkingDirectory = nucleusRoot;
+    info.UseShellExecute = false;
+    info.CreateNoWindow = true;
+    info.WindowStyle = System.Enum.Parse(framework.GetType("System.Diagnostics.ProcessWindowStyle"), "Hidden");
+    return info;
+}
+
+function PaoPaoStartProcess(info) {
+    var framework = PaoPaoSystemAssembly();
+    var Process = framework.GetType("System.Diagnostics.Process");
+    return Process.Start(info);
+}
+
+function PaoPaoLaunchPlayer(slot, controller, width, height) {
+    var launcher = PaoPaoStartProcess(PaoPaoBuildLaunchInfo(slot, controller, width, height));
+    if (!launcher.WaitForExit(120000)) {
+        launcher.Kill(); // Only the launcher/wait wrapper started by this callback.
+        throw new Error("PAO PAO player " + slot + " launcher timed out. Check its automation log.");
+    }
+    var exitCode = Number(launcher.ExitCode);
+    launcher.Dispose();
+    if (exitCode !== 0) {
+        throw new Error("PAO PAO player " + slot + " launch/injection failed, exit code=" + exitCode + ". Check paopao-automation-player-" + slot + ".log (inside SteamPlayer2 for player 2).");
+    }
+    return true;
+}
 
 Game.Play = function () {
-    var IO = importNamespace("System.IO");
-    var sourceRoot = String(IO.Path.GetFullPath(Context.RootInstallFolder));
-    var instanceRoot = String(IO.Path.GetFullPath(
-        Context.GetFolder(Nucleus.Folder.InstancedGameFolder)));
-    var sourcePrefix = sourceRoot.toLowerCase().replace(/[\\\/]+$/, "") + "\\";
-    if (instanceRoot.toLowerCase() === sourceRoot.toLowerCase() ||
-        instanceRoot.toLowerCase().indexOf(sourcePrefix) === 0) {
-        throw new Error("EOS restoration requires a separate Nucleus game copy.");
+    var player = Number(Context.PlayerID);
+    if (player !== 0 && player !== 1) {
+        throw new Error("This automated trial supports exactly two player slots.");
     }
-
-    var dataFolders = ["PaoPao Demo_Data", "PaoPao Playtest 2_Data"];
-    for (var i = 0; i < dataFolders.length; i++) {
-        var relativeDll = dataFolders[i] +
-            "\\Plugins\\x86_64\\EOSSDK-Win64-Shipping.dll";
-        var sourceDll = IO.Path.Combine(sourceRoot, relativeDll);
-        if (!IO.File.Exists(sourceDll)) {
-            if (i === 0) {
-                throw new Error("The original Steam demo EOS library is missing.");
-            }
-            continue; // Older Playtest data is not present in every install.
-        }
-
-        var dataPath = IO.Path.Combine(instanceRoot, dataFolders[i]);
-        var pluginsPath = IO.Path.Combine(dataPath, "Plugins");
-        var dllFolder = IO.Path.Combine(pluginsPath, "x86_64");
-        var destinationDll = IO.Path.Combine(instanceRoot, relativeDll);
-        var directories = [instanceRoot, dataPath, pluginsPath, dllFolder];
-        for (var j = 0; j < directories.length; j++) {
-            if (!IO.Directory.Exists(directories[j]) ||
-                (Number(IO.File.GetAttributes(directories[j])) & 0x400) !== 0) {
-                throw new Error("EOS restoration requires ordinary full-copy directories.");
-            }
-        }
-        if (IO.File.Exists(destinationDll) &&
-            (Number(IO.File.GetAttributes(destinationDll)) & 0x400) !== 0) {
-            throw new Error("Refusing to replace a linked EOS library.");
-        }
-        IO.File.Copy(sourceDll, destinationDll, true);
+    if (PaoPaoControllerIndices[0] === PaoPaoControllerIndices[1]) {
+        throw new Error("Choose two different OpenXinput controller indices.");
     }
-
-    var logPath = instanceRoot + "\\pao-player-" + (Context.PlayerID + 1) + ".log";
-    Context.StartArguments = "-screen-fullscreen 0 -popupwindow" +
-        " -screen-width " + Context.Width +
-        " -screen-height " + Context.Height +
-        ' -logFile "' + logPath + '"';
+    // Nucleus's screen-slot order is separate from the Steam account/player role.
+    // Keep each role's controller even when its assigned screen is swapped.
+    var slot = PaoPaoSwapScreenAssignments ? 2 - player : player + 1;
+    var controller = Number(PaoPaoControllerIndices[slot - 1]);
+    if (controller < 1 || controller > 32 || controller % 1 !== 0) {
+        throw new Error("OpenXinput controller index must be an integer from 1 to 32.");
+    }
+    Context.Log("PAO PAO auto launch: slot=" + slot + ", screen-slot=" + (player + 1) + ", controller=" + controller);
+    PaoPaoLaunchPlayer(slot, controller, Number(Context.Width), Number(Context.Height));
+    Context.Log("PAO PAO input ready: slot=" + slot + ". Nucleus can now select and position its game window.");
 };
