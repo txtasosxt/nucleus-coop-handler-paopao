@@ -14,3 +14,23 @@ account_name.txt
 NemirtingasEpicEmu.json
 .DS_Store
 Thumbs.db
+build/
+dist/
+outputs/
+__pycache__/
+*.pyc
+*.zip
+*.pdb
+*.local.ini
+.env
+.env.*
+Settings.ini
+Sandboxie.ini
+game profiles/
+Profiles/
+SteamIds.json
+Nicknames.json
+*.backup
+*.dmp
+globalgamemanagers*
+*.bak

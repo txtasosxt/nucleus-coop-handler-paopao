@@ -1,129 +1,66 @@
-# PAO PAO demo handler for Nucleus Co-op
+# PAO PAO Demo: two players on one PC
 
-Experimental handler for trying two players on one Windows PC with two Xbox
-controllers. **This is a development trial, not confirmed PAO PAO support.**
-No game files, emulator DLLs, account IDs or credentials are distributed here.
+A Nucleus Co-op handler and launcher for **PAO PAO Demo**, Steam app **3498580**.
+Two separate Steam accounts play on one Windows PC, with separate controllers and
+screen regions. Sandboxie Plus separates the second Steam session.
 
-## Status
+This unofficial experiment targets the **demo**, tested with Unity 6000.3.12f1
+and Nucleus Co-op 2.4.2. Compatibility with the full game or another build has not
+been established.
 
-The starting target is the Steam demo, app **3498580**, executable
-`PaoPao Demo.exe`. It does not target the unreleased full game, app 3024130.
+## Install
 
-Read-only inspection of an installed demo build found Unity 6000.3.12f1,
-IL2CPP, Unity Input System, Unity Netcode, Steamworks and an EOS networking
-transport. An existing player log referenced `EOSTransport`. These findings
-explain the initial configuration; they do not establish that emulation works.
+1. Prepare normal Steam and a second Steam client in a Sandboxie box named
+   `SteamPlayer2`, signed into different accounts. Disable Steam Input for the
+   demo in both clients. See the [setup guide](docs/automated-launch.md).
+2. [Stage the supported XInput backend patch](docs/xinput-backend.md), retain its
+   original backup, then manually install the staged settings asset. An unmodified
+   tested build used Windows Gaming Input, which the XInput hook did not intercept.
+3. From the downloaded repository root, build the helper:
 
-The first runtime trial failed during startup. Windows Application Error
-reports name the bundled Epic emulator DLL with exception `0xc0000409`.
-Disabling Epic emulation and forcing a full-copy pass did not overwrite the
-cached emulator DLLs. The current revision explicitly restores the original EOS
-libraries in each game copy before launch. This is a **startup diagnostic**,
-not a completed multiplayer fix.
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\launcher\build.ps1
+   ```
 
-The current handler attempts:
+   This uses Windows PowerShell 5.1 and the installed .NET Framework compiler;
+   no IDE or NuGet packages are needed. Python 3 is used only for staging the patch.
+4. Copy `build\PaoPaoNucleusLauncher.exe` beside `NucleusCoop.exe`. Copy
+   `handlers\Pao Pao Demo.js` into Nucleus's `handlers` folder. Keep a backup of
+   the previous handler outside that folder.
+5. Configure your Sandboxie path, controller indices and screen order at the top
+   of the handler. The shipped `[2, 1]` indices are examples for normal/boxed Steam;
+   calibrate on your PC. For custom Steam or game paths, create
+   `PaoPaoNucleusLauncher.local.ini` beside `NucleusCoop.exe`.
+6. Close both games and standalone Proto Input Hosts. Keep both Steam clients
+   signed in. Open Nucleus normally, add/select the demo's `PaoPao Demo.exe`, choose
+   **PAO PAO Demo (Automated Steam + Sandboxie)**, assign two regions and press Play.
 
-- Two game windows sized to the assigned Nucleus screen regions.
-- One XInput controller per instance through Proto Input.
-- Steam emulation while preserving the game's original Epic library.
-- Fresh Nucleus user profiles and separate player logs.
+Steam login, Steam Guard, updates and UAC can still need your interaction.
+Nucleus supplies the x64 Proto Input libraries; no game files, platform libraries,
+compiled binaries, accounts or saved profiles are distributed in this repository.
 
-**Not yet verified:** two-instance startup, authentication, session discovery,
-joining, independent controls, independent saves, or clean shutdown.
+## How it works
 
-Static validation passed: Node's JavaScript syntax check, verification of the
-configured settings against the installed Nucleus library, and top-level
-evaluation with Nucleus's own bundled Jint engine and typed game settings.
-The initial handler loaded through Nucleus and created game processes; they
-crashed before reaching the menu. The revised handler's launch result and all
-gameplay tests remain pending.
+The helper launches one game through each Steam client and starts a worker in
+that context. Both workers use OpenXinput with DirectInput redirection disabled.
+Normal Steam uses **Remote Load Library** injection; the boxed game uses
+**EasyHook Inject**. Workers remain alive until their games close. Nucleus finds
+and positions the resulting windows; its own injection methods stay disabled.
 
-The corrected restoration callback was executed with the installed Jint engine
-against isolated file fixtures. Four regression checks passed: replacing both
-cached libraries, handling an absent old Playtest folder, rejecting the source
-as a destination, and rejecting a linked destination directory. The four EOS
-DLLs in the two actual retained instances were also restored and verified by
-SHA-256 against their original Steam counterparts. No revised game launch has
-yet been verified.
+Both instances run through their respective Steam clients using the existing
+game installation.
 
-## Install and try
+## Guides
 
-1. Use an official Nucleus Co-op installation with its bundled Goldberg and
-   Proto Input files. The initial API reference was an installed
-   Nucleus executable reporting file version 2.3.0.0; runtime compatibility has
-   not yet been tested.
-2. Close any normal PAO PAO session. Back up existing saves from
-   `%USERPROFILE%\AppData\LocalLow\ArtDock\PaoPao Demo` before testing. Save
-   separation is an intended configuration, not a verified result.
-3. Download this repository's current development revision and copy
-   `handlers/Pao Pao Demo.js` into your Nucleus `handlers` folder.
-4. Restart Nucleus. Use **Search Game** and select the Steam installation's
-   `PaoPao Demo.exe`.
-5. Connect both Xbox controllers. Give the two Nucleus players different names
-   and keep distinct default Steam IDs. Entering real IDs does not authenticate
-   real Steam accounts.
-6. Assign one controller to each of two screen regions. Start the experimental
-   handler, then follow [the testing checklist](docs/testing.md).
+- [Setup, mapping and troubleshooting](docs/automated-launch.md)
+- [Exact-build XInput patch and rollback](docs/xinput-backend.md)
+- [Audio routing: unfinished](docs/audio.md)
+- [Developer checks and runtime evidence](docs/testing.md)
 
-This diagnostic deliberately uses **full game copies**, approximately 18 GiB for
-two instances plus overhead, on the drive containing Nucleus's `content`
-folder. Copies are retained for debugging. Before each launch, the handler
-explicitly overwrites each instance's x64 EOS DLL with the original from the
-Steam installation, including the optional older Playtest data folder. It
-refuses to write into the source installation or linked destination paths.
-The complete game no longer needs a forced copy pass on every trial.
-Steam's original DLLs should not be replaced. Do not manually paste emulator
-DLLs into the Steam installation.
+References: [Nucleus handlers](https://www.splitscreen.me/docs/create-handlers/),
+[Proto Input](https://www.splitscreen.me/docs/proto/),
+[Nucleus source](https://github.com/SplitScreen-Me/splitscreenme-nucleus),
+[Sandboxie command line](https://sandboxie-plus.github.io/sandboxie-docs/Content/StartCommandLine.html).
 
-The trial launches the game executable directly, rather than EOSBootstrapper.
-Whether that works with this demo must be established by the first launch test.
-If a second window fails to appear, do not treat one working window as success.
-
-The raw-input block attempts to avoid Unity detecting both controllers in both
-instances. Because the game has partial controller support, it may also prevent
-keyboard/mouse interaction needed by some menus. Record the exact affected
-menu; this configuration may require a refinement after the first test.
-
-## Multiplayer accounts
-
-Nucleus's player Steam ID fields are identifiers consumed by compatible
-emulators and handlers. They are not Steam login credentials. This experiment
-uses Steam emulation, and does not sign two real accounts in simultaneously.
-
-PAO PAO may require a valid Steam authentication ticket to create an EOS
-identity. The original EOS library is now retained after the bundled emulator
-crashed. Different Nucleus Steam IDs do not authenticate two real accounts.
-For this diagnostic, test whether the game reaches the menu first. If EOS
-login or multiplayer fails after that, retain the logs: that is a separate
-authentication/transport problem, not proof that startup still crashes.
-
-## OneDrive
-
-The handler does not set `DocumentsConfigPath` or `DocumentsSavePath`. Nucleus
-may still show its general OneDrive warning if Windows Documents is redirected
-to OneDrive. Do not move Documents or disable OneDrive just to troubleshoot this
-initial trial. Whether LocalLow save isolation works still needs verification.
-
-## Restoration regression check
-
-On Windows with PowerShell 7 and an installed copy of Nucleus, run:
-
-```powershell
-pwsh -File .\tests\check-restoration.ps1 -NucleusDirectory 'C:\NucleusCo-op'
-```
-
-Use your actual Nucleus directory. The check executes the real launch callback
-with temporary marker files, not game binaries. It does not start Nucleus or
-PAO PAO or alter installed libraries. The small fixtures are retained in the
-Windows temporary directory for inspection.
-
-## References
-
-- [Handler development guide](https://www.splitscreen.me/docs/create-handlers)
-- [Handler API](https://www.splitscreen.me/docs/handler-api/)
-- [Proto Input](https://www.splitscreen.me/docs/proto)
-- [Nucleus usage](https://www.splitscreen.me/docs/usage/)
-- [PAO PAO on Steam](https://store.steampowered.com/app/3024130/PAO_PAO/)
-
-This is an unofficial community experiment. It is not an official release
-from ArtDock, Dreland Enterprises, or SplitScreen.Me.
+This project is not affiliated with the game developer, Valve, Sandboxie or the
+Nucleus team.
