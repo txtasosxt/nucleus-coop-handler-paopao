@@ -16,8 +16,9 @@ explain the initial configuration; they do not establish that emulation works.
 
 The first runtime trial failed during startup. Windows Application Error
 reports name the bundled Epic emulator DLL with exception `0xc0000409`.
-The current revision disables Epic emulation and refreshes the retained game
-copies so they use the original EOS library. This is a **startup diagnostic**,
+Disabling Epic emulation and forcing a full-copy pass did not overwrite the
+cached emulator DLLs. The current revision explicitly restores the original EOS
+libraries in each game copy before launch. This is a **startup diagnostic**,
 not a completed multiplayer fix.
 
 The current handler attempts:
@@ -36,6 +37,14 @@ evaluation with Nucleus's own bundled Jint engine and typed game settings.
 The initial handler loaded through Nucleus and created game processes; they
 crashed before reaching the menu. The revised handler's launch result and all
 gameplay tests remain pending.
+
+The corrected restoration callback was executed with the installed Jint engine
+against isolated file fixtures. Four regression checks passed: replacing both
+cached libraries, handling an absent old Playtest folder, rejecting the source
+as a destination, and rejecting a linked destination directory. The four EOS
+DLLs in the two actual retained instances were also restored and verified by
+SHA-256 against their original Steam counterparts. No revised game launch has
+yet been verified.
 
 ## Install and try
 
@@ -58,9 +67,11 @@ gameplay tests remain pending.
 
 This diagnostic deliberately uses **full game copies**, approximately 18 GiB for
 two instances plus overhead, on the drive containing Nucleus's `content`
-folder. Copies are retained for debugging but refreshed before each trial to
-restore the original Epic DLL left replaced by the first revision. Allow the
-copy step to finish; repeated refreshes add startup time.
+folder. Copies are retained for debugging. Before each launch, the handler
+explicitly overwrites each instance's x64 EOS DLL with the original from the
+Steam installation, including the optional older Playtest data folder. It
+refuses to write into the source installation or linked destination paths.
+The complete game no longer needs a forced copy pass on every trial.
 Steam's original DLLs should not be replaced. Do not manually paste emulator
 DLLs into the Steam installation.
 
@@ -92,6 +103,19 @@ The handler does not set `DocumentsConfigPath` or `DocumentsSavePath`. Nucleus
 may still show its general OneDrive warning if Windows Documents is redirected
 to OneDrive. Do not move Documents or disable OneDrive just to troubleshoot this
 initial trial. Whether LocalLow save isolation works still needs verification.
+
+## Restoration regression check
+
+On Windows with PowerShell 7 and an installed copy of Nucleus, run:
+
+```powershell
+pwsh -File .\tests\check-restoration.ps1 -NucleusDirectory 'C:\NucleusCo-op'
+```
+
+Use your actual Nucleus directory. The check executes the real launch callback
+with temporary marker files, not game binaries. It does not start Nucleus or
+PAO PAO or alter installed libraries. The small fixtures are retained in the
+Windows temporary directory for inspection.
 
 ## References
 
