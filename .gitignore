@@ -1,0 +1,16 @@
+# Local configuration, test data, game assets, and build outputs.
+content/
+utils/
+nepice_settings/
+steam_settings/
+*.log
+*.dll
+*.exe
+*.dat
+*.acf
+*.reg
+user_steam_id.txt
+account_name.txt
+NemirtingasEpicEmu.json
+.DS_Store
+Thumbs.db
