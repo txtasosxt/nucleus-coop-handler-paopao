@@ -14,32 +14,39 @@ IL2CPP, Unity Input System, Unity Netcode, Steamworks and an EOS networking
 transport. An existing player log referenced `EOSTransport`. These findings
 explain the initial configuration; they do not establish that emulation works.
 
-The handler attempts:
+The first runtime trial failed during startup. Windows Application Error
+reports name the bundled Epic emulator DLL with exception `0xc0000409`.
+The current revision disables Epic emulation and refreshes the retained game
+copies so they use the original EOS library. This is a **startup diagnostic**,
+not a completed multiplayer fix.
+
+The current handler attempts:
 
 - Two game windows sized to the assigned Nucleus screen regions.
 - One XInput controller per instance through Proto Input.
-- Separate emulated Steam/Epic identities using the tools bundled with Nucleus.
+- Steam emulation while preserving the game's original Epic library.
 - Fresh Nucleus user profiles and separate player logs.
 
 **Not yet verified:** two-instance startup, authentication, session discovery,
 joining, independent controls, independent saves, or clean shutdown.
 
-Static validation passed: Node's JavaScript syntax check, verification of all
-69 configured settings against the installed Nucleus library, and top-level
+Static validation passed: Node's JavaScript syntax check, verification of the
+configured settings against the installed Nucleus library, and top-level
 evaluation with Nucleus's own bundled Jint engine and typed game settings.
-The per-player launch callback and the game itself were not run. Loading the
-handler through the Nucleus UI and all gameplay tests remain pending.
+The initial handler loaded through Nucleus and created game processes; they
+crashed before reaching the menu. The revised handler's launch result and all
+gameplay tests remain pending.
 
 ## Install and try
 
 1. Use an official Nucleus Co-op installation with its bundled Goldberg and
-   Nemirtingas Epic emulator files. The initial API reference was an installed
+   Proto Input files. The initial API reference was an installed
    Nucleus executable reporting file version 2.3.0.0; runtime compatibility has
    not yet been tested.
 2. Close any normal PAO PAO session. Back up existing saves from
    `%USERPROFILE%\AppData\LocalLow\ArtDock\PaoPao Demo` before testing. Save
    separation is an intended configuration, not a verified result.
-3. Download this repository's development branch and copy
+3. Download this repository's current development revision and copy
    `handlers/Pao Pao Demo.js` into your Nucleus `handlers` folder.
 4. Restart Nucleus. Use **Search Game** and select the Steam installation's
    `PaoPao Demo.exe`.
@@ -49,9 +56,11 @@ handler through the Nucleus UI and all gameplay tests remain pending.
 6. Assign one controller to each of two screen regions. Start the experimental
    handler, then follow [the testing checklist](docs/testing.md).
 
-The first run deliberately uses **full game copies**, approximately 18 GiB for
+This diagnostic deliberately uses **full game copies**, approximately 18 GiB for
 two instances plus overhead, on the drive containing Nucleus's `content`
-folder. Copies are retained for debugging. Allow the copy step to finish.
+folder. Copies are retained for debugging but refreshed before each trial to
+restore the original Epic DLL left replaced by the first revision. Allow the
+copy step to finish; repeated refreshes add startup time.
 Steam's original DLLs should not be replaced. Do not manually paste emulator
 DLLs into the Steam installation.
 
@@ -68,13 +77,14 @@ menu; this configuration may require a refinement after the first test.
 
 Nucleus's player Steam ID fields are identifiers consumed by compatible
 emulators and handlers. They are not Steam login credentials. This experiment
-uses emulation, and does not sign two real accounts in simultaneously.
+uses Steam emulation, and does not sign two real accounts in simultaneously.
 
 PAO PAO may require a valid Steam authentication ticket to create an EOS
-identity. The installed game's EOS SDK may also use APIs missing from the
-bundled emulator. Different Nucleus Steam IDs do not resolve either problem.
-If multiplayer initialization fails, retain the logs and investigate the
-authentication/transport failure before changing unrelated Windows settings.
+identity. The original EOS library is now retained after the bundled emulator
+crashed. Different Nucleus Steam IDs do not authenticate two real accounts.
+For this diagnostic, test whether the game reaches the menu first. If EOS
+login or multiplayer fails after that, retain the logs: that is a separate
+authentication/transport problem, not proof that startup still crashes.
 
 ## OneDrive
 

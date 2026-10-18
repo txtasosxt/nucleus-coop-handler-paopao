@@ -10,7 +10,7 @@ Game.MaxPlayers = 2;
 Game.MaxPlayersOneMonitor = 2;
 Game.BinariesFolder = "";
 Game.WorkingFolder = "";
-Game.Description = "EXPERIMENTAL: multiplayer, save isolation and controller separation are untested. Assign two Xbox controllers to two screen sections. This trial uses Steam and Epic emulation; real Steam IDs do not sign in to accounts. See the repository testing guide before playing or creating saves.";
+Game.Description = "STARTUP TEST: the bundled Epic emulator crashes with this demo, so this revision keeps the game's original Epic DLL. Steam emulation and controller hooks remain experimental. Assign two Xbox controllers to two screen sections. Multiplayer, save isolation and independent controls are unverified; see the repository testing guide.";
 
 // Full copies keep emulator DLL replacements away from the Steam installation.
 // Two instances need approximately 18 GiB plus overhead on the Nucleus drive.
@@ -19,12 +19,16 @@ Game.SymlinkGame = false;
 Game.SymlinkFolders = false;
 Game.SymlinkExe = false;
 Game.KeepSymLinkOnExit = true;
+// Refresh retained copies too: disabling Epic emulation alone leaves its DLLs
+// behind from the previous run. This recopies the game before applying setup.
+Game.ForceSymlink = true;
 
-// Attempt separate Steam and EOS identities through Nucleus's bundled tools.
-// This cannot be assumed to satisfy PAO PAO's Steam-ticket authentication.
+// Keep Steam emulation for this one-variable startup diagnostic.
+// Real EOS authentication may reject the emulated Steam ticket; joining is
+// not the success criterion yet. The old EOS emulator caused 0xc0000409.
 Game.UseGoldberg = true;
 Game.GoldbergWriteSteamIDAndAccount = true;
-Game.UseNemirtingasEpicEmu = true;
+Game.UseNemirtingasEpicEmu = false;
 
 // Request fresh LocalLow profiles; actual Unity save routing needs testing.
 Game.UseNucleusEnvironment = true;
