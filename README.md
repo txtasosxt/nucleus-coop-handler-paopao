@@ -1,14 +1,36 @@
-# PAO PAO Demo: two players on one PC
+# PAO PAO: two players on one PC
 
-A Nucleus Co-op handler and launcher for **PAO PAO Demo**, Steam app **3498580**.
+A Nucleus Co-op handler and launcher for **PAO PAO**, with the earlier demo
+handler retained separately.
 Two separate Steam accounts play on one Windows PC, with separate controllers and
 screen regions. Sandboxie Plus separates the second Steam session.
 
-This unofficial experiment targets the **demo**, tested with Unity 6000.3.12f1
-and Nucleus Co-op 2.4.2. Compatibility with the full game or another build has not
-been established.
+| Game | Steam app | Handler | Setup |
+| --- | --- | --- | --- |
+| Full game, supported settings build 26220223 | 3024130 | `handlers/Pao Pao.js` | [Full-game guide](docs/full-game.md) |
+| Earlier demo | 3498580 | `handlers/Pao Pao Demo.js` | Demo steps below |
 
-## Install
+Both require a supported XInput settings patch and Steam Input disabled in both
+clients. The full game's controller fix was confirmed during testing; see
+[validation and limits](docs/testing.md) for the distinction between runtime
+results and offline checks. Other builds need separate verification.
+
+## Install the full game
+
+Follow the [full-game guide](docs/full-game.md) to stage the patch, check for a
+private Sandboxie copy, configure controllers and build the helper:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\launcher\build-full-game.ps1
+```
+
+Copy the generated `build/handlers/Pao Pao.js` and `build/handlers/Pao Pao/`
+directory into Nucleus's `handlers` directory. The full-game helper belongs
+inside `handlers/Pao Pao`, resolved through `Game.Folder`. Shared Proto Input
+libraries stay in Nucleus's root. Start both Steam clients, keep both games
+closed, add `PaoPao.exe` to Nucleus, assign two controllers and regions, and Play.
+
+## Install the demo
 
 1. Prepare normal Steam and a second Steam client in a Sandboxie box named
    `SteamPlayer2`, signed into different accounts. Disable Steam Input for the
@@ -52,6 +74,7 @@ game installation.
 
 ## Guides
 
+- [Full-game installation and troubleshooting](docs/full-game.md)
 - [Setup, mapping and troubleshooting](docs/automated-launch.md)
 - [Exact-build XInput patch and rollback](docs/xinput-backend.md)
 - [Audio routing: unfinished](docs/audio.md)

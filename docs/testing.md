@@ -1,6 +1,6 @@
 # Validation and limits
 
-## Runtime evidence
+## Demo runtime evidence
 
 The tested PC/build passed: two real Steam accounts in one lobby; independent
 Xbox Bluetooth controllers; background input; direct helper launches; automated
@@ -13,9 +13,41 @@ misleading Sandboxie error despite a successful game launch. Success now returns
 zero. Earlier genuine injection failure and that exit-status issue are distinct.
 
 Audio separation remains unresolved. A single-account attempt did not work in this
-setup. Full-game/later-build compatibility, save isolation, cold Steam startup,
+setup. Later-build compatibility, save isolation, cold Steam startup,
 startup cancellation and complete shutdown are not established. Local path
 overrides are covered offline but alternate-library startup is not runtime tested.
+
+## Full-game evidence and checks
+
+The full game's logs selected Windows.Gaming.Input. In a clean boxed Steam launch,
+controllers worked in Big Picture but not gameplay with Steam Input disabled.
+Enabling Steam Input restored gameplay. After Proto Input injection, both
+controllers still controlled the game in the background even when all four
+XInput indices were zero. That workaround did not establish isolation.
+
+For build 26220223, the XInput patch was derived from the exact Unity version's
+PlayerSettings tree. All known bytes roundtripped identically; the unparsed
+four-byte tail and every other object were preserved. Exactly one byte changed
+at offset 2164. The tester reported the patched setup working. Full two-account
+automated launch/lobby testing was not repeated after the publication changes;
+the final helper hash guard and package layout are validated offline.
+
+Build/check commands (run from the repository root):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\launcher\build-full-game.ps1
+py -3 -m unittest discover -s tests -p test_prepare_xinput.py -v
+node --check '.\handlers\Pao Pao.js'
+pwsh -File .\tests\check-full-game-automation.ps1 -NucleusDirectory 'C:\NucleusCoop' -LauncherPath '.\build\handlers\Pao Pao\PaoPaoFullNucleusLauncher.exe'
+powershell -NoProfile -File .\tests\check-full-game-launch-interop.ps1 -NucleusDirectory 'C:\NucleusCoop' -LaunchRoot '.\build' -LauncherPath '.\build\handlers\Pao Pao\PaoPaoFullNucleusLauncher.exe'
+```
+
+The full-game tests evaluate typed handler objects, both region/account mappings,
+actual .NET Framework/Jint process construction, `Game.Folder` helper resolution,
+bare Sandboxie box quoting, exit handling and offline helper self-tests. They
+never launch Steam/games or inject. Patch-tool unit tests use synthetic bytes;
+local supported originals were separately checked against the published hashes.
+No game assets are needed for the unit tests or included in the repository.
 
 ## Launcher exit status
 
